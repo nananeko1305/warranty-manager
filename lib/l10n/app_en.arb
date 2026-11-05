@@ -1,0 +1,166 @@
+{
+  "@@locale": "en",
+  "appTitle": "Warranty Manager",
+  "appTagline": "Every warranty and receipt, in one place",
+  "email": "Email",
+  "password": "Password",
+  "signIn": "Sign in",
+  "createAccount": "Create account",
+  "noAccountYet": "No account yet? Create one",
+  "haveAccount": "Already have an account? Sign in",
+  "confirmAccountPassword": "Confirm password",
+  "forgotPassword": "Forgot password?",
+  "invalidEmail": "Enter a valid email",
+  "resetSent": "Password reset email sent.",
+  "minChars6": "At least 6 characters",
+  "wait": "Please wait...",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "required": "Required",
+  "edit": "Change the photo",
+  "share": "Share",
+  "open": "Open",
+  "settings": "Settings",
+  "language": "Language",
+  "systemLanguage": "Phone language",
+  "appearance": "Appearance",
+  "themeSystem": "Phone",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "account": "Account",
+  "signOut": "Sign out",
+  "changePassword": "Change password",
+  "currentPassword": "Current password",
+  "newPassword": "New password",
+  "confirmPassword": "Confirm new password",
+  "passwordsNoMatch": "Passwords do not match",
+  "passwordChanged": "Password changed.",
+  "deleteAccount": "Delete account",
+  "deleteAccountBody": "This permanently deletes your account and all your warranties. Receipt photos already uploaded stay on the image service. Enter your password to confirm.",
+  "checkUpdates": "Check for updates",
+  "appVersion": "Version {version}",
+  "@appVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "upToDate": "You have the latest version.",
+  "updateCheckFailed": "Couldn't check for updates.",
+  "newVersionTitle": "New version available",
+  "newVersionBody": "Version {version} is ready to download. You have {current}.",
+  "@newVersionBody": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "current": {
+        "type": "String"
+      }
+    }
+  },
+  "later": "Later",
+  "download": "Download",
+  "syncing": "Syncing...",
+  "synced": "Synced",
+  "errInvalidEmail": "The email is not valid.",
+  "errEmailInUse": "An account with this email already exists.",
+  "errWeakPassword": "Password is too weak (min. 6 characters).",
+  "errUserDisabled": "This account is disabled.",
+  "errWrongCredentials": "Wrong email or password.",
+  "errRecentLogin": "Sign out, sign in again and try once more.",
+  "errTooMany": "Too many attempts. Try again in a few minutes.",
+  "errNoNetwork": "No internet connection.",
+  "errPermission": "You don't have permission for this action.",
+  "errGeneric": "Something went wrong. Please try again.",
+  "warranties": "Warranties",
+  "validTab": "Valid ({count})",
+  "@validTab": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "expiredTab": "Expired ({count})",
+  "@expiredTab": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addWarranty": "Add warranty",
+  "newWarranty": "New warranty",
+  "editWarranty": "Warranty",
+  "searchHint": "Search by name or store",
+  "emptyTitle": "No warranties yet",
+  "emptyBody": "Take a photo of the receipt, enter the product name, and you will be reminded before the warranty ends.",
+  "noValid": "No valid warranties.",
+  "noExpired": "No expired warranties.",
+  "noResults": "Nothing found.",
+  "productName": "Product name",
+  "productNameHint": "e.g. Refrigerator",
+  "storeOptional": "Store (optional)",
+  "noteOptional": "Note (optional)",
+  "noteHint": "e.g. serial number",
+  "priceOptional": "Price (optional)",
+  "invalidAmount": "Enter an amount greater than 0",
+  "purchaseDate": "Purchase date",
+  "notifyOnExpiry": "Remind me before it ends",
+  "notifyOnExpiryHint": "30, 10 and 1 day before.",
+  "deleteWarrantyQ": "Delete {name}?",
+  "@deleteWarrantyQ": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteWarrantyBody": "The warranty and its reminders will be deleted. The receipt photo stays on the image service.",
+  "receipt": "Receipt",
+  "addReceipt": "Add a photo of the receipt",
+  "receiptHint": "So you have it when you claim the warranty.",
+  "receiptUploading": "Sending the photo...",
+  "receiptCamera": "Take a photo",
+  "receiptGallery": "Pick from the gallery",
+  "warranty": "Warranty",
+  "warrantyMonths": "Months",
+  "warrantyYears": "Years",
+  "warrantyMonthsRange": "1 to 120 months",
+  "warrantyYearsRange": "1 to 30 years",
+  "warrantyUntil": "Warranty until {date}",
+  "@warrantyUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "warrantyExpiredOn": "Warranty ended {date}",
+  "@warrantyExpiredOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "warrantyEndsToday": "Warranty ends today",
+  "warrantyDaysLeft": "{count, plural, =1{1 day left} other{{count} days left}}",
+  "@warrantyDaysLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notificationsOffTitle": "Notifications are off",
+  "notificationsOffBody": "You won't get warranty reminders.",
+  "turnOn": "Turn on",
+  "hibernationTitle": "Keep reminders coming",
+  "hibernationBody": "Android puts apps you don't open for months to sleep, and reminders stop reaching them. Turn that off for this app.",
+  "openSettings": "Open settings",
+  "notNow": "Not now"
+}

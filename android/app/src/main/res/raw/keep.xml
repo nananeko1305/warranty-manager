@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Pushes are sent with title_loc_key/body_loc_key, so these strings are looked
+  up by name at runtime and never referenced from code. Without this, resource
+  shrinking removes them and the notification shows up empty.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@string/update_notification_title,@string/update_notification_body,@string/warranty_days_title,@string/warranty_tomorrow_title,@string/warranty_today_title" />

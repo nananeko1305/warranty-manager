@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_notification_title">Dostupna je nova verzija</string>
+    <string name="update_notification_body">Verzija %1$s je spremna. Dodirni da preuzmeš.</string>
+    <string name="notification_channel_updates">Ažuriranja</string>
+    <!-- Only ever 8-10 and 28-30 days, which all take "dana". -->
+    <string name="warranty_days_title">Garancija ističe za %1$s dana</string>
+    <string name="warranty_tomorrow_title">Garancija ističe sutra</string>
+    <string name="warranty_today_title">Garancija ističe danas</string>
+    <string name="notification_channel_warranties">Podsetnici za garancije</string>
+</resources>

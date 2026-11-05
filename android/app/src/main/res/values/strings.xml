@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Release push; CI sends these keys, the phone picks the language. -->
+    <string name="update_notification_title">New version available</string>
+    <string name="update_notification_body">Version %1$s is ready. Tap to download.</string>
+    <string name="notification_channel_updates">Updates</string>
+    <!-- Warranty reminders; the push worker sends these keys, the phone picks
+         the language. %1$s, not %1$d: FCM passes the arguments as strings. -->
+    <string name="warranty_days_title">Warranty ends in %1$s days</string>
+    <string name="warranty_tomorrow_title">Warranty ends tomorrow</string>
+    <string name="warranty_today_title">Warranty ends today</string>
+    <string name="notification_channel_warranties">Warranty reminders</string>
+    <color name="notification_accent">#0F6B5F</color>
+    <color name="launch_background">#F8F6F1</color>
+</resources>
