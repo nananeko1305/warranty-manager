@@ -214,3 +214,55 @@ test('a fresh warranty and one with reminders off get nothing', async () => {
   await remind(google, NOW);
   assert.deepEqual(google.sent, []);
 });
+
+// ---- the sweep's calls
+const seedPhoto = (id, receiptId, ownerId = 'alice') =>
+  put(`warranties/${id}`, {
+    ownerId,
+    name: id,
+    endsOn: addDays(TODAY, 100),
+    notify: true,
+    receiptId,
+  });
+
+test('anyReceipt tells photos from none', async () => {
+  await put('warranties/plain', { ownerId: 'alice', receiptId: '' });
+  assert.equal(await client().anyReceipt(), false);
+  await seedPhoto('withPhoto', 'abc');
+  assert.equal(await client().anyReceipt(), true);
+});
+
+test('anyReceipt does not count a warranty without the field', async () => {
+  await put('warranties/old', { ownerId: 'alice', name: 'old' });
+  assert.equal(await client().anyReceipt(), false);
+});
+
+test('receiptsInUse finds those in use, and only those', async () => {
+  await seedPhoto('a', 'photo-a');
+  await seedPhoto('b', 'photo-b');
+  const used = await client().receiptsInUse(['photo-a', 'nobody'], 100);
+  assert.deepEqual([...used], ['photo-a']);
+});
+
+test('receiptsInUse copes with the 30 that `in` takes', async () => {
+  await seedPhoto('a', 'id-29');
+  const ids = Array.from({ length: 30 }, (_, i) => `id-${i}`);
+  const used = await client().receiptsInUse(ids, 100);
+  assert.deepEqual([...used], ['id-29']);
+});
+
+test('a full result keeps them all, on the real query', async () => {
+  await seedPhoto('a', 'crowd');
+  await seedPhoto('b', 'crowd');
+  const used = await client().receiptsInUse(['crowd', 'victim'], 2);
+  assert.deepEqual([...used].sort(), ['crowd', 'victim']);
+});
+
+test('the place in the sweep survives between runs', async () => {
+  const google = client();
+  assert.equal(await google.sweepCursor(), '');
+  await google.saveSweepCursor('abc');
+  assert.equal(await google.sweepCursor(), 'abc');
+  await google.saveSweepCursor('');
+  assert.equal(await google.sweepCursor(), '');
+});

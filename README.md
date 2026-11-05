@@ -23,14 +23,16 @@ Firebase project: `warranty-manager-261105-b5f9a` (Firestore in `eur3`).
   repository secrets); a build without them simply hides the receipt controls.
 - **Reminders** go out 30, 10 and 1 day before a warranty ends, unless switched
   off on that warranty.
+- **Sharing the app** (Settings): a QR code, and the link to copy or send. It always
+  points at the newest APK, so a code already handed out does not go stale.
 
 ### What it does not promise
 
 - A receipt photo can be opened by anyone who has its link, which is random and
-  hard to guess. Deleting a warranty or an account leaves the photo on Cloudinary:
-  deleting takes the API secret, which cannot ship in an APK. The app says so when
-  deleting. The preset also ships in the APK, so capping size and formats in the
-  preset is the only brake on someone uploading through it.
+  hard to guess. After a warranty or an account is deleted, the photo stays on
+  Cloudinary until the nightly sweep takes it, up to about a month later (see below).
+  The preset also ships in the APK, so capping formats in the preset is the only
+  brake on someone uploading through it; what they upload goes in the sweep.
 - A reminder cannot reach a phone without Google Play services, or an app that
   Android has hibernated or that was force-stopped, and FCM reports those as
   delivered. The home screen warns about what the app can detect.
@@ -43,13 +45,15 @@ Firebase project: `warranty-manager-261105-b5f9a` (Firestore in `eur3`).
 
 | Collection          | Fields |
 |---------------------|--------|
-| `warranties/{id}`   | `ownerId`, `name`, `store`, `note`, `purchaseDate`, `endsOn`, `warrantyAmount`, `warrantyUnit` (`months`/`years`), `amountMinor`, `currency` (`RSD`/`EUR`), `receiptUrl`, `notify`, `createdAt`, `updatedAt`, `remindersSent` (worker only) |
+| `warranties/{id}`   | `ownerId`, `name`, `store`, `note`, `purchaseDate`, `endsOn`, `warrantyAmount`, `warrantyUnit` (`months`/`years`), `amountMinor`, `currency` (`RSD`/`EUR`), `receiptUrl`, `receiptId`, `notify`, `createdAt`, `updatedAt`, `remindersSent` (worker only) |
 | `pushTokens/{token}` | `uid` of the account the phone belongs to |
+| `meta/sweep`        | `cursor`, where the sweep got to; only the worker touches it |
 
 `purchaseDate` and `endsOn` are `yyyy-MM-dd` text, because a calendar date is not
 an instant: a midnight timestamp reads as the day before further west. `endsOn`
 mirrors the date computed from the purchase date and the duration, so the worker
-can query it; the app always recomputes it. Amounts are stored in minor units
+can query it; the app always recomputes it. `receiptId` is the Cloudinary id inside
+`receiptUrl`, and the rules refuse a warranty where the two disagree. Amounts are stored in minor units
 (para / cents) as integers. All access rules live in
 [firestore.rules](firestore.rules).
 
@@ -79,6 +83,37 @@ A reminder is marked after sending, once any phone has it. If a run dies in
 between, the reminder goes out again, which is better than never: a repeat replaces
 the earlier notification, since the warranty id is its `tag`.
 
+## Receipt photos
+
+Deleting a photo takes the API secret, which cannot ship in an APK, so the worker
+does it at night: it deletes photos in the `receipts` folder that no warranty refers
+to. That one rule covers a deleted warranty or account, a replaced or removed photo,
+an abandoned form, and junk uploaded through the preset. There is no route, so
+nothing new can be attacked.
+
+A photo goes once it is **unused and over 30 days old**, counted from the upload. A
+warranty deleted after years loses its photo that night; one added and deleted at
+once keeps it for up to a month. The wait is for a warranty queued on a phone with no
+network after its photo went up: until it arrives, nothing refers to the photo. It
+has no strict bound: a save that waits longer than that loses its photo.
+
+A mistake here destroys receipts for good, so every check fails towards keeping:
+
+- **An edit writes the photo only if it changed**, or an edit queued on one phone could
+  restore a photo replaced on another.
+- **`receiptId` must match the link** in the rules, and `ReceiptUpload.uploadedUrl`
+  refuses an upload whose link does not give Cloudinary's `public_id`.
+- **A failed or partial answer stops the run.** So does a warranty that was not asked
+  for. A full result counts every photo in the query as used, since thousands of
+  warranties can name one photo and crowd out someone else's.
+- **Each run first finds a warranty with a photo**, or it stops: a wrong project or a
+  renamed field would make every photo look unused.
+- **Only plain receipts qualify:** `receipts` folder, `image`, `upload`, a readable date.
+- **`SWEEP_DELETE`** in `wrangler.toml`: anything but `"true"` only logs what it would
+  delete. Set it to `"false"` and deploy to stop deleting at once.
+- **At most 30 photos looked at and 10 deleted per run,** seven runs a night. Raise them
+  only after watching the CPU time.
+
 ### Deploying the worker
 
 The worker runs on its own Cloudflare account, so the credentials live in a
@@ -100,6 +135,7 @@ cd push_worker
 npm ci
 npm test
 npm run secret < key.json   # then delete key.json
+# CLOUDINARY_CLOUD, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET: wrangler secret put
 npm run deploy
 npm run tail                # watch the logs
 ```

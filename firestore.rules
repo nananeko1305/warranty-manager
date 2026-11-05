@@ -23,6 +23,20 @@ service cloud.firestore {
             && d.currency in ['RSD', 'EUR']);
     }
 
+    // The id must be what the link says: the push worker deletes photos that no
+    // warranty refers to by id, so a stale one would cost a photo. Same rule as
+    // receiptIdOf in the app.
+    function validReceipt(d) {
+      return d.receiptUrl is string && d.receiptUrl.size() <= 500
+        && d.receiptId is string
+        && ((d.receiptUrl == '' && d.receiptId == '')
+            || (d.receiptUrl.matches(
+                  '^https://res[.]cloudinary[.]com/[^/]+/image/upload/(v[0-9]+/)?.+[.][^./]+$')
+                && d.receiptId == d.receiptUrl
+                     .replace('^https://res[.]cloudinary[.]com/[^/]+/image/upload/(v[0-9]+/)?', '')
+                     .replace('[.][^./]+$', '')));
+    }
+
     // The limits on the duration match isValidWarrantyAmount in the app.
     function validWarranty(d) {
       return d.name is string && d.name.size() > 0 && d.name.size() <= 120
@@ -34,9 +48,7 @@ service cloud.firestore {
         && d.warrantyAmount is int && d.warrantyAmount >= 1
         && d.warrantyAmount <= (d.warrantyUnit == 'years' ? 30 : 120)
         && validPrice(d)
-        && d.receiptUrl is string && d.receiptUrl.size() <= 500
-        && (d.receiptUrl == ''
-            || d.receiptUrl.matches('^https://res[.]cloudinary[.]com/.+'))
+        && validReceipt(d)
         && d.notify is bool
         && d.updatedAt == request.time;
     }
@@ -44,7 +56,7 @@ service cloud.firestore {
     function editableFields() {
       return ['name', 'store', 'note', 'purchaseDate', 'endsOn',
               'warrantyAmount', 'warrantyUnit', 'amountMinor', 'currency',
-              'receiptUrl', 'notify', 'updatedAt'];
+              'receiptUrl', 'receiptId', 'notify', 'updatedAt'];
     }
 
     // `remindersSent` belongs to the push worker. On create it is simply not in

@@ -107,3 +107,66 @@ test('a failed call throws, so the run can try again', async () => {
   answer(503, {});
   await assert.rejects(() => google().record([{ id: 'a', key: 'k' }], []));
 });
+
+const rows = (...receiptIds) =>
+  receiptIds.map((receiptId, i) => ({
+    document: {
+      name: `projects/p/databases/(default)/documents/warranties/w${i}`,
+      fields: { receiptId: { stringValue: receiptId } },
+    },
+  }));
+
+test('photos in use come back as a set', async () => {
+  answer(200, rows('a'));
+  const used = await google().receiptsInUse(['a', 'b'], 100);
+  assert.deepEqual([...used], ['a']);
+});
+
+test('no ids, no query', async () => {
+  globalThis.fetch = async () => {
+    throw new Error('no call expected');
+  };
+  assert.equal((await google().receiptsInUse([], 100)).size, 0);
+});
+
+// Thousands of warranties can name one junk photo and crowd out someone's row, so
+// a full result cannot be trusted to have left nothing out.
+test('a full result keeps every photo that was asked about', async () => {
+  answer(200, rows('a', 'a'));
+  const used = await google().receiptsInUse(['a', 'victim'], 2);
+  assert.deepEqual([...used].sort(), ['a', 'victim']);
+});
+
+test('an unexpected warranty stops everything', async () => {
+  answer(200, rows('not-asked-for'));
+  await assert.rejects(() => google().receiptsInUse(['a'], 100));
+});
+
+test('a warranty without the id stops everything', async () => {
+  answer(200, [
+    {
+      document: {
+        name: 'projects/p/databases/(default)/documents/warranties/w',
+        fields: {},
+      },
+    },
+  ]);
+  await assert.rejects(() => google().receiptsInUse(['a'], 100));
+});
+
+// An error row inside a 200 must not read as "nobody uses this photo".
+test('an error inside a good answer stops everything', async () => {
+  answer(200, [{ error: { code: 13, message: 'internal' } }]);
+  await assert.rejects(() => google().receiptsInUse(['a'], 100));
+  await assert.rejects(() => google().anyReceipt());
+});
+
+test('the sweep starts from the beginning without a saved place', async () => {
+  answer(404, {});
+  assert.equal(await google().sweepCursor(), '');
+});
+
+test('a failed read of the place stops the run', async () => {
+  answer(500, {});
+  await assert.rejects(() => google().sweepCursor());
+});

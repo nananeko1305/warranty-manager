@@ -5,8 +5,13 @@ import {
   outcome,
   planSends,
 } from './due.js';
+import { Cloudinary } from './cloudinary.js';
 import { connect } from './google.js';
 import { dayInBelgrade, reminderMessage } from './message.js';
+import { sweep } from './sweep.js';
+
+// Has to match the second trigger in wrangler.toml.
+export const SWEEP_CRON = '10 0-6 * * *';
 
 // The free plan allows 50 outside calls per run and 10 ms of CPU. A run takes
 // the sign-in, two queries and up to two batch writes, and then one call per
@@ -67,9 +72,17 @@ export default {
   fetch: () => new Response(null, { status: 404 }),
 
   scheduled(event, env, ctx) {
+    const now = new Date(event.scheduledTime);
+    const job =
+      event.cron === SWEEP_CRON
+        ? (google) =>
+            sweep(google, new Cloudinary(env), now, {
+              deleting: env.SWEEP_DELETE === 'true',
+            })
+        : (google) => remind(google, now);
     ctx.waitUntil(
       connect(env)
-        .then((google) => remind(google, new Date(event.scheduledTime)))
+        .then(job)
         .catch((error) => console.error(`The run failed: ${error.message}`)),
     );
   },

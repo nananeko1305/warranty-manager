@@ -110,6 +110,11 @@ export class Google {
       throw new Error(`Firestore query failed with ${response.status}`);
     }
     const rows = await response.json();
+    // A failed query must not read as an empty one: the sweep deletes what it
+    // does not find.
+    if (rows.some((row) => row.error)) {
+      throw new Error('Firestore query answered with an error');
+    }
     return rows.filter((row) => row.document).map((row) => decode(row.document));
   }
 
@@ -138,6 +143,70 @@ export class Google {
       from: [{ collectionId: 'pushTokens' }],
       where: stringsIn('uid', uids),
     });
+  }
+
+  /** Whether any warranty has a photo: the sweep's check it reads the right data. */
+  async anyReceipt() {
+    const rows = await this.#query({
+      from: [{ collectionId: 'warranties' }],
+      select: { fields: fieldsOf('receiptId') },
+      where: {
+        fieldFilter: {
+          field: { fieldPath: 'receiptId' },
+          op: 'GREATER_THAN',
+          value: { stringValue: '' },
+        },
+      },
+      limit: 1,
+    });
+    return rows.length > 0;
+  }
+
+  /**
+   * Which of [ids], at most 30, some warranty still uses. A full result may have
+   * left some out, and thousands of warranties can name the same photo, so then
+   * all of them count as used. Anything unexpected throws before a delete.
+   */
+  async receiptsInUse(ids, limit) {
+    if (ids.length === 0) return new Set();
+    const rows = await this.#query({
+      from: [{ collectionId: 'warranties' }],
+      select: { fields: fieldsOf('receiptId') },
+      where: stringsIn('receiptId', ids),
+      limit,
+    });
+    const asked = new Set(ids);
+    if (rows.some((row) => !asked.has(row.receiptId))) {
+      throw new Error('Firestore returned a warranty that was not asked for');
+    }
+    if (rows.length >= limit) return asked;
+    return new Set(rows.map((row) => row.receiptId));
+  }
+
+  /** Where the sweep got to, or '' for the start. */
+  async sweepCursor() {
+    const response = await fetch(`${this.documents}/meta/sweep`, {
+      headers: this.headers,
+    });
+    if (response.status === 404) return '';
+    if (!response.ok) {
+      throw new Error(`Firestore read failed with ${response.status}`);
+    }
+    return decode(await response.json()).cursor ?? '';
+  }
+
+  async saveSweepCursor(cursor) {
+    const response = await fetch(
+      `${this.documents}/meta/sweep?updateMask.fieldPaths=cursor`,
+      {
+        method: 'PATCH',
+        headers: this.headers,
+        body: JSON.stringify({ fields: { cursor: { stringValue: cursor } } }),
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Firestore write failed with ${response.status}`);
+    }
   }
 
   /**

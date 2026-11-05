@@ -7,13 +7,19 @@ preview_urls = false
 
 [vars]
 FIREBASE_PROJECT_ID = "warranty-manager-261105-b5f9a"
+# Anything but "true" makes the sweep only report what it would delete, which is
+# also how to stop it quickly.
+SWEEP_DELETE = "false"
 
 # One trigger, which fires ten times each morning. The first run does the work;
 # the others pick up whatever the per-run budget left over or an outage missed.
 # Cloudflare cron runs in UTC, so in Belgrade this is about 09:00-13:30 in winter
 # and 10:00-14:30 in summer. The free plan allows five triggers per account.
+#
+# The second trigger sweeps receipt photos nobody uses any more, at night in
+# Belgrade. SWEEP_CRON in src/index.js has to match it.
 [triggers]
-crons = ["*/30 8-12 * * *"]
+crons = ["*/30 8-12 * * *", "10 0-6 * * *"]
 
 # Logs and CPU time in the Cloudflare dashboard.
 [observability]

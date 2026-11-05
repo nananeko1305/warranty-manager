@@ -48,6 +48,7 @@ const fields = (ownerId = 'alice', changes = {}) => ({
   amountMinor: 150000,
   currency: 'RSD',
   receiptUrl: 'https://res.cloudinary.com/x/image/upload/v1/a.jpg',
+  receiptId: 'a',
   notify: true,
   updatedAt: serverTimestamp(),
   createdAt: serverTimestamp(),
@@ -156,10 +157,22 @@ describe('creating', () => {
     'a price without a currency': { currency: null },
     'a currency without a price': { amountMinor: null },
     'an unknown currency': { currency: 'USD' },
-    'a photo from somewhere else': { receiptUrl: 'https://evil.example/a.jpg' },
-    'a lookalike host': { receiptUrl: 'https://res.cloudinary.com.evil.example/a' },
+    'a photo from somewhere else': {
+      receiptUrl: 'https://evil.example/image/upload/v1/a.jpg',
+    },
+    'a lookalike host': {
+      receiptUrl: 'https://res.cloudinary.com.evil.example/x/image/upload/v1/a.jpg',
+    },
     'a photo address that is too long': {
-      receiptUrl: `https://res.cloudinary.com/${'x'.repeat(500)}`,
+      receiptUrl: `https://res.cloudinary.com/x/image/upload/v1/${'x'.repeat(500)}.jpg`,
+      receiptId: 'x'.repeat(500),
+    },
+    'an id that is not what the link says': { receiptId: 'someone-elses' },
+    'a link without its id': { receiptId: '' },
+    'an id without a link': { receiptUrl: '' },
+    'an id that is not text': { receiptId: 5 },
+    'a link that is not an upload': {
+      receiptUrl: 'https://res.cloudinary.com/x/video/upload/v1/a.mp4',
     },
     'reminders that are not a yes or a no': { notify: 'yes' },
     'an invented time of writing': { updatedAt: new Date(0) },
@@ -176,7 +189,15 @@ describe('creating', () => {
   const accepted = {
     'the longest name': { name: 'x'.repeat(120) },
     'an empty store and note': { store: '', note: '' },
-    'no photo': { receiptUrl: '' },
+    'no photo': { receiptUrl: '', receiptId: '' },
+    'a link without a version': {
+      receiptUrl: 'https://res.cloudinary.com/x/image/upload/a.jpg',
+      receiptId: 'a',
+    },
+    'an id with a folder in it': {
+      receiptUrl: 'https://res.cloudinary.com/x/image/upload/v1/receipts/a.jpg',
+      receiptId: 'receipts/a',
+    },
     '18 months': { warrantyUnit: 'months', warrantyAmount: 18 },
     '120 months': { warrantyUnit: 'months', warrantyAmount: 120 },
     '30 years': { warrantyAmount: 30 },
@@ -209,6 +230,31 @@ describe('changing', () => {
   test('the owner can still edit after the worker has marked it', async () => {
     await seed('w1', 'alice', { remindersSent: ['2028-01-10:30'] });
     await assertSucceeds(updateDoc(warranty(as('alice')), edit()));
+  });
+
+  // What the app writes when the photo did not change.
+  test('an edit can leave the photo out altogether', async () => {
+    await seed();
+    await assertSucceeds(updateDoc(warranty(as('alice')), edit({ note: 'x' })));
+  });
+
+  test('replacing the photo needs its new id', async () => {
+    await seed();
+    const receiptUrl = 'https://res.cloudinary.com/x/image/upload/v2/b.jpg';
+    await assertFails(updateDoc(warranty(as('alice')), edit({ receiptUrl })));
+    await assertSucceeds(
+      updateDoc(warranty(as('alice')), edit({ receiptUrl, receiptId: 'b' })),
+    );
+  });
+
+  test('removing the photo needs the id gone too', async () => {
+    await seed();
+    await assertFails(
+      updateDoc(warranty(as('alice')), edit({ receiptUrl: '' })),
+    );
+    await assertSucceeds(
+      updateDoc(warranty(as('alice')), edit({ receiptUrl: '', receiptId: '' })),
+    );
   });
 
   test('moving the end date is fine', async () => {
@@ -346,4 +392,6 @@ test('everything else is closed', async () => {
   await assertFails(getDoc(doc(db, 'users', 'alice')));
   await assertFails(setDoc(doc(db, 'users', 'alice'), { role: 'admin' }));
   await assertFails(getDocs(collection(db, 'meta')));
+  // Where the worker keeps its place in the sweep.
+  await assertFails(setDoc(doc(db, 'meta', 'sweep'), { cursor: 'x' }));
 });
