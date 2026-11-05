@@ -29,6 +29,13 @@ class _WarrantyFormScreenState extends State<WarrantyFormScreen> {
   late final _draft = WarrantyDraft(warranty: widget.warranty);
   bool _uploading = false;
 
+  /// The optional fields stay out of the way when there is nothing in them, so
+  /// that everything else and the save button fit on one screen.
+  late bool _details =
+      _draft.store.text.isNotEmpty ||
+      _draft.note.text.isNotEmpty ||
+      _draft.amount.text.isNotEmpty;
+
   /// Lengths the rules enforce; better stopped here than refused on save.
   static const _maxName = 120;
   static const _maxNote = 1000;
@@ -40,7 +47,11 @@ class _WarrantyFormScreenState extends State<WarrantyFormScreen> {
   }
 
   void _save() {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      // The fields stay mounted while hidden, so one of them may be the problem.
+      setState(() => _details = true);
+      return;
+    }
     final warranty = _draft.build(ownerId: widget.ownerId);
     saveInBackground(context, () => WarrantyRepository.instance.save(warranty));
     Navigator.of(context).pop();
@@ -122,38 +133,51 @@ class _WarrantyFormScreenState extends State<WarrantyFormScreen> {
               purchaseDate: _draft.purchaseDate,
               onUnit: (u) => setState(() => _draft.unit = u),
             ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _draft.store,
-              maxLength: _maxName,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: t.storeOptional,
-                prefixIcon: const Icon(Icons.storefront_rounded),
-                counterText: '',
-              ),
-            ),
-            const SizedBox(height: 14),
-            MoneyFields(
-              amount: _draft.amount,
-              currency: _draft.currency,
-              onCurrency: (c) => setState(() => _draft.currency = c),
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: _draft.note,
-              maxLength: _maxNote,
-              minLines: 1,
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: t.noteOptional,
-                hintText: t.noteHint,
-                prefixIcon: const Icon(Icons.notes_rounded),
-                counterText: '',
-              ),
-            ),
             const SizedBox(height: 6),
+            _DetailsToggle(
+              open: _details,
+              onTap: () => setState(() => _details = !_details),
+            ),
+            Visibility(
+              visible: _details,
+              maintainState: true,
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _draft.store,
+                    maxLength: _maxName,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      labelText: t.storeOptional,
+                      prefixIcon: const Icon(Icons.storefront_rounded),
+                      counterText: '',
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  MoneyFields(
+                    amount: _draft.amount,
+                    currency: _draft.currency,
+                    onCurrency: (c) => setState(() => _draft.currency = c),
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _draft.note,
+                    maxLength: _maxNote,
+                    minLines: 1,
+                    maxLines: 4,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      labelText: t.noteOptional,
+                      hintText: t.noteHint,
+                      prefixIcon: const Icon(Icons.notes_rounded),
+                      counterText: '',
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                ],
+              ),
+            ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               secondary: const Icon(Icons.notifications_active_rounded),
@@ -170,6 +194,24 @@ class _WarrantyFormScreenState extends State<WarrantyFormScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DetailsToggle extends StatelessWidget {
+  const _DetailsToggle({required this.open, required this.onTap});
+
+  final bool open;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    return TextButton.icon(
+      onPressed: onTap,
+      style: TextButton.styleFrom(alignment: Alignment.centerLeft),
+      icon: Icon(open ? Icons.expand_less_rounded : Icons.expand_more_rounded),
+      label: Text(t.moreDetails),
     );
   }
 }
