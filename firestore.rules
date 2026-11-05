@@ -1,0 +1,83 @@
+rules_version = '2';
+
+// The app talks to Firestore directly, so these rules are the security boundary
+// for everything it does. Anyone can open an account, which is why each one sees
+// only its own data. The push worker uses a service account and skips them.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsResource() {
+      return signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    function isDay(value) {
+      return value is string && value.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function validPrice(d) {
+      return (d.amountMinor == null && d.currency == null)
+        || (d.amountMinor is int && d.amountMinor > 0
+            && d.currency in ['RSD', 'EUR']);
+    }
+
+    // The limits on the duration match isValidWarrantyAmount in the app.
+    function validWarranty(d) {
+      return d.name is string && d.name.size() > 0 && d.name.size() <= 120
+        && d.store is string && d.store.size() <= 120
+        && d.note is string && d.note.size() <= 1000
+        && isDay(d.purchaseDate) && isDay(d.endsOn)
+        && d.endsOn > d.purchaseDate
+        && d.warrantyUnit in ['months', 'years']
+        && d.warrantyAmount is int && d.warrantyAmount >= 1
+        && d.warrantyAmount <= (d.warrantyUnit == 'years' ? 30 : 120)
+        && validPrice(d)
+        && d.receiptUrl is string && d.receiptUrl.size() <= 500
+        && (d.receiptUrl == ''
+            || d.receiptUrl.matches('^https://res[.]cloudinary[.]com/.+'))
+        && d.notify is bool
+        && d.updatedAt == request.time;
+    }
+
+    function editableFields() {
+      return ['name', 'store', 'note', 'purchaseDate', 'endsOn',
+              'warrantyAmount', 'warrantyUnit', 'amountMinor', 'currency',
+              'receiptUrl', 'notify', 'updatedAt'];
+    }
+
+    // `remindersSent` belongs to the push worker. On create it is simply not in
+    // the list. On update the check has to look at what changed: the resulting
+    // document still contains the field once the worker has written it, so
+    // keys().hasOnly() would refuse every later edit.
+    match /warranties/{id} {
+      allow read, delete: if ownsResource();
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.keys().hasOnly(
+             editableFields().concat(['ownerId', 'createdAt']))
+        && request.resource.data.keys().hasAll(
+             editableFields().concat(['ownerId', 'createdAt']))
+        && request.resource.data.createdAt == request.time
+        && validWarranty(request.resource.data);
+      allow update: if ownsResource()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(editableFields())
+        && validWarranty(request.resource.data);
+    }
+
+    // Which account a phone belongs to. A phone that changes hands writes its
+    // token over the previous account's, and knowing a token takes that phone.
+    // Listing is only for deleting an account, which has to find its other
+    // phones, and a query for someone else's is refused.
+    match /pushTokens/{token} {
+      allow list, delete: if signedIn()
+        && resource.data.uid == request.auth.uid;
+      allow create, update: if signedIn()
+        && token.size() <= 512
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid;
+    }
+  }
+}
