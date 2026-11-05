@@ -1,0 +1,20 @@
+name = "warranty-manager-push"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+# Nothing outside calls this worker, so it has no address at all.
+workers_dev = false
+preview_urls = false
+
+[vars]
+FIREBASE_PROJECT_ID = "warranty-manager-261105"
+
+# One trigger, which fires ten times each morning. The first run does the work;
+# the others pick up whatever the per-run budget left over or an outage missed.
+# Cloudflare cron runs in UTC, so in Belgrade this is about 09:00-13:30 in winter
+# and 10:00-14:30 in summer. The free plan allows five triggers per account.
+[triggers]
+crons = ["*/30 8-12 * * *"]
+
+# Logs and CPU time in the Cloudflare dashboard.
+[observability]
+enabled = true
