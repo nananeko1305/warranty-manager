@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../money/money.dart';
+import 'receipt_id.dart';
 import 'warranty_dates.dart';
 
 /// A warranty in `warranties/{id}`, which only its owner can see.
@@ -93,7 +94,25 @@ class Warranty {
     'amountMinor': amountMinor,
     'currency': currency?.code,
     'receiptUrl': receiptUrl,
+    // Mirrors [receiptUrl], so the push worker can tell which photos are still
+    // in use. The rules check that the two agree.
+    'receiptId': receiptIdOf(receiptUrl),
     'notify': notify,
     'updatedAt': FieldValue.serverTimestamp(),
   };
+
+  /// What an edit writes, given the warranty as it was when the form opened.
+  ///
+  /// The photo stays out of it unless it changed. Otherwise an edit queued on
+  /// one phone would put back a photo replaced on another, leaving the new one
+  /// unreferenced and the old one possibly deleted by then.
+  Map<String, dynamic> toEditMap(Warranty before) {
+    final map = toMap();
+    if (receiptUrl == before.receiptUrl) {
+      map
+        ..remove('receiptUrl')
+        ..remove('receiptId');
+    }
+    return map;
+  }
 }

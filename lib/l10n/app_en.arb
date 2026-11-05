@@ -37,7 +37,7 @@
   "passwordsNoMatch": "Passwords do not match",
   "passwordChanged": "Password changed.",
   "deleteAccount": "Delete account",
-  "deleteAccountBody": "This permanently deletes your account and all your warranties. Receipt photos already uploaded stay on the image service. Enter your password to confirm.",
+  "deleteAccountBody": "This permanently deletes your account and all your warranties. Receipt photos are removed from the image service within about a month. Enter your password to confirm.",
   "checkUpdates": "Check for updates",
   "appVersion": "Version {version}",
   "@appVersion": {
@@ -119,7 +119,7 @@
       }
     }
   },
-  "deleteWarrantyBody": "The warranty and its reminders will be deleted. The receipt photo stays on the image service.",
+  "deleteWarrantyBody": "The warranty and its reminders will be deleted. The receipt photo is removed from the image service within about a month.",
   "receipt": "Receipt",
   "addReceipt": "Add a photo of the receipt",
   "receiptHint": "So you have it when you claim the warranty.",
@@ -163,5 +163,11 @@
   "hibernationBody": "Android puts apps you don't open for months to sleep, and reminders stop reaching them. Turn that off for this app.",
   "openSettings": "Open settings",
   "notNow": "Not now",
-  "moreDetails": "Store, price and note"
+  "moreDetails": "Store, price and note",
+  "shareApp": "Share the app",
+  "shareAppHint": "Scan the code with another phone's camera, or send the link. Android will ask to allow installing from that source.",
+  "shareAppMessage": "Warranty Manager: every warranty and receipt, in one place.",
+  "copyLink": "Copy link",
+  "linkCopied": "Link copied.",
+  "sendLink": "Send"
 }

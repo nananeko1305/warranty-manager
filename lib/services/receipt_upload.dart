@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
+import '../models/receipt_id.dart';
+
 /// Uploads a receipt photo to Cloudinary with an unsigned preset.
 ///
 /// The cloud and preset names come from `--dart-define` at build time,
@@ -56,10 +58,22 @@ class ReceiptUpload {
         request.url,
       );
     }
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return uploadedUrl(response.body);
+  }
+
+  /// The link in Cloudinary's answer to an upload.
+  ///
+  /// Refuses a link whose id is not the id Cloudinary reports: the push worker
+  /// deletes photos no warranty refers to by that id, so a saved warranty with a
+  /// wrong one would lose its photo.
+  static String uploadedUrl(String responseBody) {
+    final body = jsonDecode(responseBody) as Map<String, dynamic>;
     final url = body['secure_url'] as String?;
     if (url == null) {
-      throw http.ClientException('Upload returned no URL', request.url);
+      throw const FormatException('Upload returned no URL');
+    }
+    if (receiptIdOf(url) != body['public_id']) {
+      throw const FormatException('Upload returned an unexpected URL');
     }
     return url;
   }

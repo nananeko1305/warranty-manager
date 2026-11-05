@@ -8,6 +8,7 @@ import '../theme/theme_controller.dart';
 import '../widgets/change_password_dialog.dart';
 import '../widgets/delete_account_dialog.dart';
 import '../widgets/update_tiles.dart';
+import 'share_app_screen.dart';
 
 /// Language and appearance, stored on the device, plus the account.
 class SettingsScreen extends StatelessWidget {
@@ -99,6 +100,13 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () => showDeleteAccountDialog(context),
               ),
               const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.qr_code_2_rounded),
+                title: Text(t.shareApp),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ShareAppScreen()),
+                ),
+              ),
               const UpdateTiles(),
             ],
           ),

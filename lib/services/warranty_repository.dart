@@ -20,14 +20,15 @@ class WarrantyRepository {
       .snapshots()
       .map((snap) => snap.docs.map(Warranty.fromDoc).toList());
 
-  Future<void> save(Warranty warranty) {
-    if (warranty.id.isEmpty) {
+  /// [before] is the warranty as the form received it; null for a new one.
+  Future<void> save(Warranty warranty, {required Warranty? before}) {
+    if (before == null) {
       return _warranties.doc().set({
         ...warranty.toMap(),
         'createdAt': FieldValue.serverTimestamp(),
       });
     }
-    return _warranties.doc(warranty.id).update(warranty.toMap());
+    return _warranties.doc(warranty.id).update(warranty.toEditMap(before));
   }
 
   Future<void> delete(String id) => _warranties.doc(id).delete();

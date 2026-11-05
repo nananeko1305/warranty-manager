@@ -3,6 +3,11 @@ import 'dart:io';
 
 import 'package:package_info_plus/package_info_plus.dart';
 
+/// Always the newest APK, so a QR code already handed out never goes stale. The
+/// file name is `APK_NAME` in `.github/workflows/release-apk.yml`.
+const String kAppDownloadUrl =
+    'https://github.com/nananeko1305/warranty-manager/releases/latest/download/warranty-manager.apk';
+
 /// Latest release as published by CI to GitHub Pages (`version.json`).
 class ReleaseInfo {
   const ReleaseInfo({

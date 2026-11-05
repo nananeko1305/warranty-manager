@@ -122,7 +122,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'This permanently deletes your account and all your warranties. Receipt photos already uploaded stay on the image service. Enter your password to confirm.';
+      'This permanently deletes your account and all your warranties. Receipt photos are removed from the image service within about a month. Enter your password to confirm.';
 
   @override
   String get checkUpdates => 'Check for updates';
@@ -266,7 +266,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteWarrantyBody =>
-      'The warranty and its reminders will be deleted. The receipt photo stays on the image service.';
+      'The warranty and its reminders will be deleted. The receipt photo is removed from the image service within about a month.';
 
   @override
   String get receipt => 'Receipt';
@@ -349,4 +349,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get moreDetails => 'Store, price and note';
+
+  @override
+  String get shareApp => 'Share the app';
+
+  @override
+  String get shareAppHint =>
+      'Scan the code with another phone\'s camera, or send the link. Android will ask to allow installing from that source.';
+
+  @override
+  String get shareAppMessage =>
+      'Warranty Manager: every warranty and receipt, in one place.';
+
+  @override
+  String get copyLink => 'Copy link';
+
+  @override
+  String get linkCopied => 'Link copied.';
+
+  @override
+  String get sendLink => 'Send';
 }

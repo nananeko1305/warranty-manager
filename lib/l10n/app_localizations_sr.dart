@@ -122,7 +122,7 @@ class AppLocalizationsSr extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'Ovo trajno briše tvoj nalog i sve tvoje garancije. Već poslate slike računa ostaju na servisu za slike. Upiši lozinku da potvrdiš.';
+      'Ovo trajno briše tvoj nalog i sve tvoje garancije. Slike računa se brišu sa servisa za slike u roku od oko mesec dana. Upiši lozinku da potvrdiš.';
 
   @override
   String get checkUpdates => 'Proveri ažuriranja';
@@ -268,7 +268,7 @@ class AppLocalizationsSr extends AppLocalizations {
 
   @override
   String get deleteWarrantyBody =>
-      'Garancija i njeni podsetnici biće obrisani. Slika računa ostaje na servisu za slike.';
+      'Garancija i njeni podsetnici biće obrisani. Slika računa se briše sa servisa za slike u roku od oko mesec dana.';
 
   @override
   String get receipt => 'Račun';
@@ -352,4 +352,24 @@ class AppLocalizationsSr extends AppLocalizations {
 
   @override
   String get moreDetails => 'Prodavnica, cena i napomena';
+
+  @override
+  String get shareApp => 'Podeli aplikaciju';
+
+  @override
+  String get shareAppHint =>
+      'Skeniraj kod kamerom drugog telefona ili pošalji link. Android će tražiti dozvolu za instalaciju iz tog izvora.';
+
+  @override
+  String get shareAppMessage =>
+      'Warranty Manager: sve garancije i računi, na jednom mestu.';
+
+  @override
+  String get copyLink => 'Kopiraj link';
+
+  @override
+  String get linkCopied => 'Link je kopiran.';
+
+  @override
+  String get sendLink => 'Pošalji';
 }

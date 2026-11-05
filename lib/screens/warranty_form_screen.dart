@@ -53,7 +53,10 @@ class _WarrantyFormScreenState extends State<WarrantyFormScreen> {
       return;
     }
     final warranty = _draft.build(ownerId: widget.ownerId);
-    saveInBackground(context, () => WarrantyRepository.instance.save(warranty));
+    saveInBackground(
+      context,
+      () => WarrantyRepository.instance.save(warranty, before: widget.warranty),
+    );
     Navigator.of(context).pop();
   }
 

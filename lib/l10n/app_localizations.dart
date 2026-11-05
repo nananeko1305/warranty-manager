@@ -323,7 +323,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAccountBody.
   ///
   /// In en, this message translates to:
-  /// **'This permanently deletes your account and all your warranties. Receipt photos already uploaded stay on the image service. Enter your password to confirm.'**
+  /// **'This permanently deletes your account and all your warranties. Receipt photos are removed from the image service within about a month. Enter your password to confirm.'**
   String get deleteAccountBody;
 
   /// No description provided for @checkUpdates.
@@ -587,7 +587,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteWarrantyBody.
   ///
   /// In en, this message translates to:
-  /// **'The warranty and its reminders will be deleted. The receipt photo stays on the image service.'**
+  /// **'The warranty and its reminders will be deleted. The receipt photo is removed from the image service within about a month.'**
   String get deleteWarrantyBody;
 
   /// No description provided for @receipt.
@@ -727,6 +727,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Store, price and note'**
   String get moreDetails;
+
+  /// No description provided for @shareApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the app'**
+  String get shareApp;
+
+  /// No description provided for @shareAppHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the code with another phone\'s camera, or send the link. Android will ask to allow installing from that source.'**
+  String get shareAppHint;
+
+  /// No description provided for @shareAppMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Warranty Manager: every warranty and receipt, in one place.'**
+  String get shareAppMessage;
+
+  /// No description provided for @copyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get copyLink;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied.'**
+  String get linkCopied;
+
+  /// No description provided for @sendLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get sendLink;
 }
 
 class _AppLocalizationsDelegate

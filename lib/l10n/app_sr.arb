@@ -37,7 +37,7 @@
   "passwordsNoMatch": "Lozinke se ne poklapaju",
   "passwordChanged": "Lozinka je promenjena.",
   "deleteAccount": "Obriši nalog",
-  "deleteAccountBody": "Ovo trajno briše tvoj nalog i sve tvoje garancije. Već poslate slike računa ostaju na servisu za slike. Upiši lozinku da potvrdiš.",
+  "deleteAccountBody": "Ovo trajno briše tvoj nalog i sve tvoje garancije. Slike računa se brišu sa servisa za slike u roku od oko mesec dana. Upiši lozinku da potvrdiš.",
   "checkUpdates": "Proveri ažuriranja",
   "appVersion": "Verzija {version}",
   "upToDate": "Imaš najnoviju verziju.",
@@ -81,7 +81,7 @@
   "notifyOnExpiry": "Podseti me pre isteka",
   "notifyOnExpiryHint": "30, 10 i 1 dan pre.",
   "deleteWarrantyQ": "Obrisati {name}?",
-  "deleteWarrantyBody": "Garancija i njeni podsetnici biće obrisani. Slika računa ostaje na servisu za slike.",
+  "deleteWarrantyBody": "Garancija i njeni podsetnici biće obrisani. Slika računa se briše sa servisa za slike u roku od oko mesec dana.",
   "receipt": "Račun",
   "addReceipt": "Dodaj sliku računa",
   "receiptHint": "Da ti je pri ruci kad ideš na reklamaciju.",
@@ -104,5 +104,11 @@
   "hibernationBody": "Android uspava aplikacije koje mesecima ne otvaraš i tada podsetnici ne stižu. Isključi to za ovu aplikaciju.",
   "openSettings": "Otvori podešavanja",
   "notNow": "Ne sada",
-  "moreDetails": "Prodavnica, cena i napomena"
+  "moreDetails": "Prodavnica, cena i napomena",
+  "shareApp": "Podeli aplikaciju",
+  "shareAppHint": "Skeniraj kod kamerom drugog telefona ili pošalji link. Android će tražiti dozvolu za instalaciju iz tog izvora.",
+  "shareAppMessage": "Warranty Manager: sve garancije i računi, na jednom mestu.",
+  "copyLink": "Kopiraj link",
+  "linkCopied": "Link je kopiran.",
+  "sendLink": "Pošalji"
 }
