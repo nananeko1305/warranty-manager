@@ -6,7 +6,7 @@ workers_dev = false
 preview_urls = false
 
 [vars]
-FIREBASE_PROJECT_ID = "warranty-manager-261105"
+FIREBASE_PROJECT_ID = "warranty-manager-261105-b5f9a"
 
 # One trigger, which fires ten times each morning. The first run does the work;
 # the others pick up whatever the per-run budget left over or an outage missed.

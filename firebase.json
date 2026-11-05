@@ -1,5 +1,6 @@
 {
   "firestore": {
+    "location": "eur3",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
@@ -11,5 +12,29 @@
       "enabled": false
     },
     "singleProjectMode": true
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true
+    }
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "warranty-manager-261105-b5f9a",
+          "appId": "1:526747860957:android:bad10e4ef8a011e6b00034",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "warranty-manager-261105-b5f9a",
+          "configurations": {
+            "android": "1:526747860957:android:bad10e4ef8a011e6b00034"
+          }
+        }
+      }
+    }
   }
 }

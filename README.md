@@ -4,7 +4,7 @@ Android app (Flutter + Firebase) for keeping warranties with a photo of the
 receipt, and being reminded before they end. English UI with Serbian
 localization.
 
-Firebase project: `warranty-manager-261105` (Firestore in `eur3`).
+Firebase project: `warranty-manager-261105-b5f9a` (Firestore in `eur3`).
 
 ## What it does
 

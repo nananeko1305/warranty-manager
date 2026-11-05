@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "526747860957",
+    "project_id": "warranty-manager-261105-b5f9a",
+    "storage_bucket": "warranty-manager-261105-b5f9a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:526747860957:android:bad10e4ef8a011e6b00034",
+        "android_client_info": {
+          "package_name": "com.nananeko.warranty_manager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8jM-n1IR-gLgiYwmicK4N5OtqmOXQcqw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -117,6 +117,10 @@ arrays, and anything else comes back as null.
 | `firestore.rules` | Hand: `firebase deploy --only firestore:rules` | **Before** the merge that needs it |
 | Push worker | Hand: `npm run deploy` from `push_worker/` | **Before** the merge that needs it |
 
+- **`firebase deploy` creates a missing database**, in `firestore.location` from
+  `firebase.json`, or in the US (`nam5`) without it. A location cannot be changed, so
+  keep that key. Email/Password sign-in is switched on from the same file
+  (`firebase deploy --only auth`).
 - Work goes on `dev`; merging into `main` ships.
 - **Every merge into `main` reaches every phone.** The workflow has no path filter,
   so even a docs-only merge builds an APK and notifies everyone.
