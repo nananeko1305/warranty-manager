@@ -1,0 +1,281 @@
+name: Build & Release APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Needed to publish a Release (contents) and the update manifest (pages).
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Only one release run at a time; a newer push cancels an in-flight one.
+concurrency:
+  group: release-apk
+  cancel-in-progress: true
+
+env:
+  APK_NAME: warranty-manager.apk
+  FLUTTER_VERSION: 3.47.3
+
+jobs:
+  build:
+    name: Build APK & publish Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      sha256: ${{ steps.sum.outputs.sha256 }}
+    steps:
+      # Full history: the release version is derived from the commits
+      # since the last tag.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      # Caches Gradle dependencies and build cache — the slowest part of the
+      # Android build (Flutter SDK + pub are cached by flutter-action above).
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Quality gate: no release if analysis or tests fail.
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # The worker is deployed by hand, but a broken one should stop a release
+      # all the same. The emulator tests in rules_test/ stay a manual step.
+      - name: Test the push worker
+        working-directory: push_worker
+        run: |
+          npm ci
+          npm test
+
+      # Writes android/key.properties from secrets so the APK is release-signed.
+      # No secret set -> no-op, and the build falls back to debug signing.
+      - name: Configure release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "No keystore secret set — using debug signing."
+            exit 0
+          fi
+          # Strip any whitespace/newlines (wrapped base64) before decoding.
+          echo "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 -d > android/app/upload-keystore.jks
+          if [ ! -s android/app/upload-keystore.jks ]; then
+            echo "Decoded keystore is empty — check the ANDROID_KEYSTORE_BASE64 secret."
+            exit 1
+          fi
+          cat > android/key.properties <<EOF
+          storeFile=upload-keystore.jks
+          storePassword=$STORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      # The version comes from the commit messages since the last tag:
+      # a feat bumps the minor, anything else the patch, and a breaking
+      # change the major. The version in pubspec.yaml acts as a floor,
+      # so raising it by hand forces a bigger number (a deliberate 2.0).
+      - name: Compute the release version
+        id: ver
+        run: |
+          python3 - >> "$GITHUB_OUTPUT" <<'PY'
+          import re, subprocess
+
+          def git(*args):
+              return subprocess.run(
+                  ['git', *args], capture_output=True, text=True, check=True
+              ).stdout.strip()
+
+          tags = [t for t in git('tag', '--list', 'v*', '--sort=-v:refname').splitlines() if t]
+          last = tags[0] if tags else ''
+          found = re.match(r'v?(\d+)\.(\d+)\.(\d+)', last)
+          major, minor, patch = [int(x) for x in found.groups()] if found else (0, 0, 0)
+
+          log = git('log', '--format=%s%n%b', f'{last}..HEAD' if last else 'HEAD')
+          breaking = re.search(r'^BREAKING CHANGE', log, re.M) or re.search(r'^\w+(\([^)]*\))?!:', log, re.M)
+          feature = re.search(r'^feat(\([^)]*\))?!?:', log, re.M)
+          if breaking:
+              nxt = (major + 1, 0, 0)
+          elif feature:
+              nxt = (major, minor + 1, 0)
+          else:
+              nxt = (major, minor, patch + 1)
+
+          floor = re.search(r'^version:\s*(\d+)\.(\d+)\.(\d+)', open('pubspec.yaml').read(), re.M)
+          manual = tuple(int(x) for x in floor.groups()) if floor else (0, 0, 0)
+          print('version=' + '.'.join(str(n) for n in max(nxt, manual)))
+          PY
+
+      # The Cloudinary cloud and preset are build inputs, not source: the
+      # repository is public and they are enough to upload into the
+      # account. Without them the receipt controls stay hidden.
+      - name: Build release APK
+        run: >
+          flutter build apk --release
+          --build-name=${{ steps.ver.outputs.version }}
+          --build-number=${{ github.run_number }}
+          --dart-define=CLOUDINARY_CLOUD=${{ secrets.CLOUDINARY_CLOUD }}
+          --dart-define=CLOUDINARY_PRESET=${{ secrets.CLOUDINARY_PRESET }}
+          --obfuscate --split-debug-info=build/symbols
+
+      # Pushes reference these strings by name (loc keys); if
+      # resource shrinking drops them, notifications arrive empty.
+      - name: Verify notification strings are packaged
+        run: |
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/aapt2
+          DUMP=$("$AAPT2" dump resources build/app/outputs/flutter-apk/app-release.apk)
+          for key in update_notification_title update_notification_body warranty_days_title warranty_tomorrow_title warranty_today_title; do
+            echo "$DUMP" | grep -q "string/$key" || { echo "::error::string/$key missing from APK"; exit 1; }
+          done
+
+      - name: Rename APK
+        run: cp build/app/outputs/flutter-apk/app-release.apk "${{ env.APK_NAME }}"
+
+      - name: Checksum
+        id: sum
+        run: |
+          HASH=$(sha256sum "${{ env.APK_NAME }}" | awk '{print $1}')
+          echo "$HASH  ${{ env.APK_NAME }}" > "${{ env.APK_NAME }}.sha256"
+          echo "sha256=$HASH" >> "$GITHUB_OUTPUT"
+
+      - name: Bundle debug symbols
+        run: (cd build && zip -r ../debug-symbols.zip symbols) || echo "no symbols"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: Warranty Manager ${{ steps.ver.outputs.version }}
+          files: |
+            ${{ env.APK_NAME }}
+            ${{ env.APK_NAME }}.sha256
+            debug-symbols.zip
+          make_latest: true
+          body: |
+            Automated build from `main`.
+
+            - Commit: ${{ github.sha }}
+            - Android version code: ${{ github.run_number }}
+            - SHA-256: `${{ steps.sum.outputs.sha256 }}`
+
+            Download `${{ env.APK_NAME }}` below and install it on Android (allow
+            installation from unknown sources).
+
+  # Installed apps learn about a new release from version.json on GitHub
+  # Pages (UpdateChecker in lib/services). There is no download page any
+  # more, only this file; dropping the job would leave every install
+  # reading a stale version forever.
+  deploy-pages:
+    name: Publish version.json
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Write version.json
+        run: |
+          DL="https://github.com/${{ github.repository }}/releases/latest/download/${{ env.APK_NAME }}"
+          mkdir -p _site
+          cat > _site/version.json <<EOF
+          {"version":"${{ needs.build.outputs.version }}","build":${{ github.run_number }},"url":"$DL"}
+          EOF
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  notify:
+    name: Push release notification
+    needs: [build, deploy-pages]
+    runs-on: ubuntu-latest
+    env:
+      # Secrets can't be tested in `if:` directly; expose presence as a flag.
+      HAS_FCM: ${{ secrets.FCM_SERVICE_ACCOUNT != '' }}
+    steps:
+      - name: Skip (no FCM secret)
+        if: env.HAS_FCM != 'true'
+        run: echo "FCM_SERVICE_ACCOUNT is not set — no push notification sent."
+
+      # Sends to the `releases` topic every install subscribes to. The text
+      # comes from string resources in the app (title/body *_loc_key), so each
+      # phone shows it in its own language.
+      - name: Send FCM message
+        if: env.HAS_FCM == 'true'
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FCM_SERVICE_ACCOUNT }}
+          VERSION: ${{ needs.build.outputs.version }}
+          BUILD: ${{ github.run_number }}
+        run: |
+          pip install --quiet google-auth requests
+          python3 - <<'PY'
+          import json, os
+          import google.auth.transport.requests
+          from google.oauth2 import service_account
+
+          info = json.loads(os.environ["SERVICE_ACCOUNT"])
+          creds = service_account.Credentials.from_service_account_info(
+              info, scopes=["https://www.googleapis.com/auth/firebase.messaging"])
+          session = google.auth.transport.requests.AuthorizedSession(creds)
+
+          version, build = os.environ["VERSION"], os.environ["BUILD"]
+          message = {"message": {
+              "topic": "releases",
+              "data": {"type": "release", "version": version, "build": build},
+              "android": {
+                  "priority": "high",
+                  "notification": {
+                      "title_loc_key": "update_notification_title",
+                      "body_loc_key": "update_notification_body",
+                      "body_loc_args": [version],
+                      "channel_id": "updates",
+                  },
+              },
+          }}
+          url = f"https://fcm.googleapis.com/v1/projects/{info['project_id']}/messages:send"
+          response = session.post(url, json=message, timeout=30)
+          print(response.status_code, response.text)
+          response.raise_for_status()
+          PY
