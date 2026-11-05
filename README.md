@@ -104,6 +104,10 @@ npm run deploy
 npm run tail                # watch the logs
 ```
 
+A new Cloudflare account has no `workers.dev` subdomain, and without one the cron
+trigger is refused (code 10063), even though this worker has no address on it. The
+account now has one, `warranty-manager-push`, made through the API.
+
 ## Release
 
 Every push to `main` runs [release-apk.yml](.github/workflows/release-apk.yml):
