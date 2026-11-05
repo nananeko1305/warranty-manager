@@ -266,3 +266,24 @@ test('the place in the sweep survives between runs', async () => {
   await google.saveSweepCursor('');
   assert.equal(await google.sweepCursor(), '');
 });
+
+// ---- the route's calls
+test('get finds a warranty and its owner, or nothing', async () => {
+  await seedPhoto('a', 'photo-a');
+  const found = await client().get('warranties/a');
+  assert.equal(found.ownerId, 'alice');
+  assert.equal(found.receiptId, 'photo-a');
+  assert.equal(await client().get('warranties/nope'), null);
+});
+
+test('a photo only this warranty names is not used elsewhere', async () => {
+  await seedPhoto('a', 'photo-a');
+  await seedPhoto('b', 'photo-b');
+  assert.equal(await client().receiptUsedElsewhere('photo-a', 'a'), false);
+});
+
+test('a photo another warranty names is used elsewhere', async () => {
+  await seedPhoto('forged', 'shared', 'mallory');
+  await seedPhoto('real', 'shared', 'alice');
+  assert.equal(await client().receiptUsedElsewhere('shared', 'forged'), true);
+});

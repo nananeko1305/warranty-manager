@@ -22,12 +22,13 @@ go stale. The repository is **public**, so nothing secret goes here.
                      ┌─ Firebase Auth      email/password, open sign-up
  Android app ────────┼─ Firestore          direct from the app, offline cache on
  (Flutter)           ├─ Cloudinary         receipt photos, unsigned preset
+                     ├─ Push worker        POST /release-receipt, deletes a photo
                      ├─ GitHub Pages       version.json, the update check
                      └─ FCM                receives pushes
 
  Push worker ────────┬─ Firestore REST     service account, bypasses the rules
  (Cloudflare, cron)  ├─ FCM v1             per-phone reminders, in the morning
-                     └─ Cloudinary         deletes unused photos, at night
+                     └─ Cloudinary         deletes a photo when the app asks
 
  GitHub Actions ─────┬─ GitHub Release     the APK
  (push to main)      ├─ GitHub Pages       version.json
@@ -37,8 +38,10 @@ go stale. The repository is **public**, so nothing secret goes here.
 There is no backend of our own. The app talks to Firestore directly, so
 **`firestore.rules` is the security boundary** for everything the app does, and
 open sign-up means it has to hold against anyone: test changes in `rules_test/`.
-The worker uses a service account, which skips those rules, but it has no HTTP
-routes, so only the cron trigger can run it.
+The worker uses a service account, which skips those rules, so **its own checks in
+`push_worker/src/receipts.js` are the only boundary on its one route**: the photo comes
+off the warranty, never from the request, the warranty must be the caller's, and a
+photo another warranty names stays.
 
 ## Code map
 
@@ -49,12 +52,12 @@ Start-up: `main.dart` → `AuthGate` (signed in?) → `HomeScreen`. `AuthGate` k
 |---|---|
 | `lib/models/` | `Warranty` with `fromDoc`/`toMap`, and the pure logic: `warranty_dates`, `warranty_list` (sorting, search), `WarrantyDraft` |
 | `lib/money/` | `Currency`, parsing and formatting of amounts |
-| `lib/services/` | Singleton repositories (`XRepository.instance`), `LiveData`, push, auth, account deletion, updates, receipts, `ReminderHealth` |
+| `lib/services/` | Singleton repositories (`XRepository.instance`), `LiveData`, push, auth, account deletion, updates, receipts (`ReceiptCleanup` asks the worker to delete one), `ReminderHealth` |
 | `lib/screens/` | Full screens |
 | `lib/widgets/` | Reusable pieces, dialogs and form fields |
 | `lib/l10n/` | `app_en.arb` (template) and `app_sr.arb`; the generated Dart is committed. `kSupportedLocales` is in `locale_controller.dart` |
 | `lib/theme/` | The palette in `AppColors` and `context.colors`; use these, not hard-coded colors |
-| `push_worker/src/` | `index.js` picks the job by `event.cron` and holds the reminder run, `due.js` what is due (pure), `message.js` text and dates (pure), `sweep.js` the photo sweep, `cloudinary.js` its calls, `google.js` Firestore and FCM calls |
+| `push_worker/src/` | `index.js` the route, the cron dispatch and the reminder run, `receipts.js` the route's checks, `due.js` what is due (pure), `message.js` text and dates (pure), `cloudinary.js` listing and deleting, `sweep.js` the sweep, switched off, `google.js` Firestore and FCM calls |
 | `rules_test/` | The rules, and with `push_worker/emulator/` the worker, against the emulator |
 | `android/app/src/main/` | `MainActivity.kt` creates notification channels and answers `ReminderHealth`; `res/values*/strings.xml` holds push titles |
 
@@ -73,10 +76,11 @@ Start-up: `main.dart` → `AuthGate` (signed in?) → `HomeScreen`. `AuthGate` k
   and number formats and to the date picker, in a Latin interface.
 - **Dates are `yyyy-MM-dd` text in Firestore** (`dateKey`, `parseDateKey`). The worker
   compares them as text, in Belgrade days.
-- **`receiptId` mirrors `receiptUrl`** (`receiptIdOf`, and the same rule in
-  `firestore.rules`), and **edits go through `toEditMap`**, which leaves the photo out
-  unless it changed. The sweep deletes photos nothing refers to, so both protect
-  receipts from being deleted while in use.
+- **A photo goes before the write that drops it** (`WarrantyRepository`), because the
+  worker reads it off the warranty as it stands. Failing to reach the worker must not
+  stop the write. **`receiptId` mirrors `receiptUrl`** (`receiptIdOf`, and the same rule
+  in `firestore.rules`), and **edits go through `toEditMap`**, which leaves the photo out
+  unless it changed.
 - **Money is an `int` in minor units.**
 - **User-visible text goes through `AppLocalizations`**, in both `.arb` files, then
   `flutter gen-l10n`. Errors go through `errorText`.
@@ -97,8 +101,9 @@ the notification arrives empty; the key list in the CI step "Verify notification
 strings"; and `ReminderPush.fromData` for the foreground snackbar and the tap. A new
 channel also goes in `MainActivity.kt`.
 
-**New way to store a photo reference:** the sweep has to know it, or every photo
-referred to only that way looks unused.
+**New way to drop a photo reference:** call `ReceiptCleanup.release` first, or the
+photo stays on Cloudinary. A new way to store one: the sweep has to know it, or every
+photo referred to only that way looks unused.
 
 **Worker reads a new field:** add it to `select` in `warrantiesEndingOn`, and teach
 `decodeValue` its type if it is new: it reads strings, booleans, timestamps and
@@ -106,9 +111,10 @@ arrays, and anything else comes back as null.
 
 ## Worker pitfalls
 
-- **The sweep destroys receipts for good if it is wrong.** Any change near it has to
-  keep failing towards keeping the photo; the README lists the checks. Run it with
-  `SWEEP_DELETE = "false"` first, and read the log.
+- **The sweep is off on purpose:** photos go when someone deletes them, not by
+  themselves. It destroys receipts for good if it is wrong, so keep it failing towards
+  keeping the photo, and run it with `SWEEP_DELETE = "false"` first. The README says how
+  to turn it on.
 
 - **`:batchWrite` takes one write per document**, and can answer 200 with every write
   failed, so `outcome` dedupes tokens and `record` reads each `status`.

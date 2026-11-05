@@ -71,7 +71,7 @@ class _WarrantyFormScreenState extends State<WarrantyFormScreen> {
     if (!ok || !mounted) return;
     saveInBackground(
       context,
-      () => WarrantyRepository.instance.delete(warranty.id),
+      () => WarrantyRepository.instance.delete(warranty),
     );
     Navigator.of(context).pop();
   }

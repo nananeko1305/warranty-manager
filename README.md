@@ -29,10 +29,9 @@ Firebase project: `warranty-manager-261105-b5f9a` (Firestore in `eur3`).
 ### What it does not promise
 
 - A receipt photo can be opened by anyone who has its link, which is random and
-  hard to guess. After a warranty or an account is deleted, the photo stays on
-  Cloudinary until the nightly sweep takes it, up to about a month later (see below).
-  The preset also ships in the APK, so capping formats in the preset is the only
-  brake on someone uploading through it; what they upload goes in the sweep.
+  hard to guess. Deleting a warranty offline leaves its photo on Cloudinary (see
+  below). The preset also ships in the APK, so capping formats in the preset is the
+  only brake on someone uploading through it.
 - A reminder cannot reach a phone without Google Play services, or an app that
   Android has hibernated or that was force-stopped, and FCM reports those as
   delivered. The home screen warns about what the app can detect.
@@ -47,7 +46,7 @@ Firebase project: `warranty-manager-261105-b5f9a` (Firestore in `eur3`).
 |---------------------|--------|
 | `warranties/{id}`   | `ownerId`, `name`, `store`, `note`, `purchaseDate`, `endsOn`, `warrantyAmount`, `warrantyUnit` (`months`/`years`), `amountMinor`, `currency` (`RSD`/`EUR`), `receiptUrl`, `receiptId`, `notify`, `createdAt`, `updatedAt`, `remindersSent` (worker only) |
 | `pushTokens/{token}` | `uid` of the account the phone belongs to |
-| `meta/sweep`        | `cursor`, where the sweep got to; only the worker touches it |
+| `meta/sweep`        | `cursor`, where the sweep got to, if it is ever switched on; only the worker touches it |
 
 `purchaseDate` and `endsOn` are `yyyy-MM-dd` text, because a calendar date is not
 an instant: a midnight timestamp reads as the day before further west. `endsOn`
@@ -61,8 +60,7 @@ can query it; the app always recomputes it. `receiptId` is the Cloudinary id ins
 
 Cloud Functions need the Blaze plan, and a service account key cannot ship in a
 public APK, so a small [Cloudflare Worker](push_worker) on the free plan does the
-sending and holds the key. It has no address and no HTTP routes: a cron trigger is
-the only way in.
+sending and holds the key. A cron trigger starts every reminder; nothing outside can.
 
 1. The app registers each phone's FCM token in `pushTokens/{token}`.
 2. The trigger fires every 30 minutes from 08:00 to 12:30 UTC, which is the morning
@@ -85,34 +83,30 @@ the earlier notification, since the warranty id is its `tag`.
 
 ## Receipt photos
 
-Deleting a photo takes the API secret, which cannot ship in an APK, so the worker
-does it at night: it deletes photos in the `receipts` folder that no warranty refers
-to. That one rule covers a deleted warranty or account, a replaced or removed photo,
-an abandoned form, and junk uploaded through the preset. There is no route, so
-nothing new can be attacked.
+Deleting a photo takes the API secret, which cannot ship in an APK. So when someone
+deletes a warranty, replaces or removes its photo, or deletes their account, the app
+first asks the worker (`POST /release-receipt`) to delete the photo, and then writes
+the change. The app is what starts it; nothing is deleted by itself.
 
-A photo goes once it is **unused and over 30 days old**, counted from the upload. A
-warranty deleted after years loses its photo that night; one added and deleted at
-once keeps it for up to a month. The wait is for a warranty queued on a phone with no
-network after its photo went up: until it arrives, nothing refers to the photo. It
-has no strict bound: a save that waits longer than that loses its photo.
+Anyone can open an account, so a valid sign-in proves little. The route takes only a
+warranty id. The photo comes off that warranty, never from the request, the warranty
+must be the caller's, and a photo another warranty also names stays, since the rules
+let anyone put any Cloudinary link on their own warranty.
 
-A mistake here destroys receipts for good, so every check fails towards keeping:
+An edit writes the photo only if it changed, or an edit queued on one phone could put
+back a photo replaced on another.
 
-- **An edit writes the photo only if it changed**, or an edit queued on one phone could
-  restore a photo replaced on another.
-- **`receiptId` must match the link** in the rules, and `ReceiptUpload.uploadedUrl`
-  refuses an upload whose link does not give Cloudinary's `public_id`.
-- **A failed or partial answer stops the run.** So does a warranty that was not asked
-  for. A full result counts every photo in the query as used, since thousands of
-  warranties can name one photo and crowd out someone else's.
-- **Each run first finds a warranty with a photo**, or it stops: a wrong project or a
-  renamed field would make every photo look unused.
-- **Only plain receipts qualify:** `receipts` folder, `image`, `upload`, a readable date.
-- **`SWEEP_DELETE`** in `wrangler.toml`: anything but `"true"` only logs what it would
-  delete. Set it to `"false"` and deploy to stop deleting at once.
-- **At most 30 photos looked at and 10 deleted per run,** seven runs a night. Raise them
-  only after watching the CPU time.
+**What stays behind:** a warranty deleted with no network loses its photo reference
+without the photo going, and so does a form abandoned after a photo went up. Nothing
+cleans these up for now.
+
+**The nightly sweep** in `push_worker/src/sweep.js` would clean them up, and is switched
+off on purpose: `wrangler.toml` has no trigger for it, and `SWEEP_DELETE` is `"false"`.
+It deletes photos no warranty refers to once they are over 30 days old, counted from
+the upload, because a warranty can sit queued on a phone after its photo went up. To
+turn it on, add `SWEEP_CRON` from `src/index.js` to the triggers, run it with the
+switch off and read the log, and then set `SWEEP_DELETE` to `"true"`. A mistake there
+destroys receipts for good, so every check in it fails towards keeping the photo.
 
 ### Deploying the worker
 
@@ -141,8 +135,8 @@ npm run tail                # watch the logs
 ```
 
 A new Cloudflare account has no `workers.dev` subdomain, and without one the cron
-trigger is refused (code 10063), even though this worker has no address on it. The
-account now has one, `warranty-manager-push`, made through the API.
+trigger is refused (code 10063). The account now has one, `warranty-manager-push`,
+made through the API.
 
 ## Release
 

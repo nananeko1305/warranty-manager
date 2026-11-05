@@ -122,7 +122,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'This permanently deletes your account and all your warranties. Receipt photos are removed from the image service within about a month. Enter your password to confirm.';
+      'This permanently deletes your account, all your warranties and their receipt photos. Enter your password to confirm.';
 
   @override
   String get checkUpdates => 'Check for updates';
@@ -266,7 +266,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteWarrantyBody =>
-      'The warranty and its reminders will be deleted. The receipt photo is removed from the image service within about a month.';
+      'The warranty, its reminders and the receipt photo will be deleted.';
 
   @override
   String get receipt => 'Receipt';

@@ -145,6 +145,30 @@ export class Google {
     });
   }
 
+  /** The document at [path], or null when there is none. */
+  async get(path) {
+    const response = await fetch(`${this.documents}/${path}`, {
+      headers: this.headers,
+    });
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      throw new Error(`Firestore read failed with ${response.status}`);
+    }
+    return decode(await response.json());
+  }
+
+  /** Whether a warranty other than [warrantyId] names the photo [receiptId]. */
+  async receiptUsedElsewhere(receiptId, warrantyId) {
+    const rows = await this.#query({
+      from: [{ collectionId: 'warranties' }],
+      select: { fields: fieldsOf('receiptId') },
+      where: stringsIn('receiptId', [receiptId]),
+      // Two are enough: at least one of them is another warranty.
+      limit: 2,
+    });
+    return rows.some((row) => row.id !== warrantyId);
+  }
+
   /** Whether any warranty has a photo: the sweep's check it reads the right data. */
   async anyReceipt() {
     const rows = await this.#query({

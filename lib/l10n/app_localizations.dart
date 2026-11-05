@@ -323,7 +323,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAccountBody.
   ///
   /// In en, this message translates to:
-  /// **'This permanently deletes your account and all your warranties. Receipt photos are removed from the image service within about a month. Enter your password to confirm.'**
+  /// **'This permanently deletes your account, all your warranties and their receipt photos. Enter your password to confirm.'**
   String get deleteAccountBody;
 
   /// No description provided for @checkUpdates.
@@ -587,7 +587,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteWarrantyBody.
   ///
   /// In en, this message translates to:
-  /// **'The warranty and its reminders will be deleted. The receipt photo is removed from the image service within about a month.'**
+  /// **'The warranty, its reminders and the receipt photo will be deleted.'**
   String get deleteWarrantyBody;
 
   /// No description provided for @receipt.

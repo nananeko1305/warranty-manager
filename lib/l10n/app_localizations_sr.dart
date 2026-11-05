@@ -122,7 +122,7 @@ class AppLocalizationsSr extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'Ovo trajno briše tvoj nalog i sve tvoje garancije. Slike računa se brišu sa servisa za slike u roku od oko mesec dana. Upiši lozinku da potvrdiš.';
+      'Ovo trajno briše tvoj nalog, sve tvoje garancije i slike računa. Upiši lozinku da potvrdiš.';
 
   @override
   String get checkUpdates => 'Proveri ažuriranja';
@@ -268,7 +268,7 @@ class AppLocalizationsSr extends AppLocalizations {
 
   @override
   String get deleteWarrantyBody =>
-      'Garancija i njeni podsetnici biće obrisani. Slika računa se briše sa servisa za slike u roku od oko mesec dana.';
+      'Garancija, njeni podsetnici i slika računa biće obrisani.';
 
   @override
   String get receipt => 'Račun';

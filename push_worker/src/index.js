@@ -8,10 +8,14 @@ import {
 import { Cloudinary } from './cloudinary.js';
 import { connect } from './google.js';
 import { dayInBelgrade, reminderMessage } from './message.js';
+import { releaseReceipt } from './receipts.js';
 import { sweep } from './sweep.js';
 
-// Has to match the second trigger in wrangler.toml.
+// The nightly sweep is switched off: wrangler.toml has no such trigger for now.
+// To turn it on, add this there and set SWEEP_DELETE to "true".
 export const SWEEP_CRON = '10 0-6 * * *';
+
+const answer = (status) => new Response(null, { status });
 
 // The free plan allows 50 outside calls per run and 10 ms of CPU. A run takes
 // the sign-in, two queries and up to two batch writes, and then one call per
@@ -68,8 +72,17 @@ export async function remind(google, now) {
 }
 
 export default {
-  // Nothing calls this worker, and it has no address of its own.
-  fetch: () => new Response(null, { status: 404 }),
+  async fetch(request, env) {
+    const { pathname } = new URL(request.url);
+    if (pathname !== '/release-receipt') return answer(404);
+    if (request.method !== 'POST') return answer(405);
+    try {
+      return answer(await releaseReceipt(request, env));
+    } catch (error) {
+      console.error(`${pathname} failed: ${error.message}`);
+      return answer(500);
+    }
+  },
 
   scheduled(event, env, ctx) {
     const now = new Date(event.scheduledTime);

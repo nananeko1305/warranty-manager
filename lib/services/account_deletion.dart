@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'auth_service.dart';
 import 'push_service.dart';
+import 'receipt_cleanup.dart';
 import 'saved_emails.dart';
 
 /// Deletes the signed-in account and everything it owns in Firestore.
@@ -20,6 +21,8 @@ class AccountDeletion {
   /// A batch takes 500 writes at most.
   static const _batchSize = 400;
 
+  static const _releasesAtOnce = 5;
+
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   Future<void> delete(String password) async {
@@ -29,12 +32,32 @@ class AccountDeletion {
     await AuthService.instance.reauthenticate(user, password);
     // Saves still queued here must not recreate what is about to be deleted.
     await _db.waitForPendingWrites().timeout(_timeout);
+    await _releasePhotos(user.uid);
     await _deleteAll(_db.collection('warranties'), 'ownerId', user.uid);
     // Tokens too: the account's other phones are not in this phone's cache.
     await _deleteAll(_db.collection('pushTokens'), 'uid', user.uid);
     await user.delete();
     await PushService.instance.dropToken();
     if (email != null) await SavedEmails.instance.remove(email);
+  }
+
+  /// A few at a time, and best effort: a photo left behind must not stop someone
+  /// from deleting their account.
+  Future<void> _releasePhotos(String uid) async {
+    final snap = await _db
+        .collection('warranties')
+        .where('ownerId', isEqualTo: uid)
+        .get(const GetOptions(source: Source.server))
+        .timeout(_timeout);
+    final ids = [
+      for (final doc in snap.docs)
+        if ((doc.data()['receiptUrl'] as String? ?? '').isNotEmpty) doc.id,
+    ];
+    for (var i = 0; i < ids.length; i += _releasesAtOnce) {
+      await Future.wait(
+        ids.skip(i).take(_releasesAtOnce).map(ReceiptCleanup.instance.release),
+      );
+    }
   }
 
   /// From the server, since the cache knows only what this phone has seen.

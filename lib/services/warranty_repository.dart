@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/warranty.dart';
+import 'receipt_cleanup.dart';
 
 /// CRUD for one account's warranties.
 class WarrantyRepository {
@@ -28,8 +29,24 @@ class WarrantyRepository {
         'createdAt': FieldValue.serverTimestamp(),
       });
     }
-    return _warranties.doc(warranty.id).update(warranty.toEditMap(before));
+    return _saveEdit(warranty, before);
   }
 
-  Future<void> delete(String id) => _warranties.doc(id).delete();
+  Future<void> _saveEdit(Warranty warranty, Warranty before) async {
+    final replaced =
+        before.receiptUrl.isNotEmpty &&
+        before.receiptUrl != warranty.receiptUrl;
+    // Before the write: the worker finds the photo on the warranty as it stands.
+    if (replaced) await ReceiptCleanup.instance.release(before.id);
+    await _warranties.doc(warranty.id).update(warranty.toEditMap(before));
+  }
+
+  /// The photo goes first, for the same reason. Offline it stays behind, and
+  /// nothing may stand in the way of deleting the warranty.
+  Future<void> delete(Warranty warranty) async {
+    if (warranty.receiptUrl.isNotEmpty) {
+      await ReceiptCleanup.instance.release(warranty.id);
+    }
+    await _warranties.doc(warranty.id).delete();
+  }
 }

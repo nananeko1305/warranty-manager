@@ -37,7 +37,7 @@
   "passwordsNoMatch": "Passwords do not match",
   "passwordChanged": "Password changed.",
   "deleteAccount": "Delete account",
-  "deleteAccountBody": "This permanently deletes your account and all your warranties. Receipt photos are removed from the image service within about a month. Enter your password to confirm.",
+  "deleteAccountBody": "This permanently deletes your account, all your warranties and their receipt photos. Enter your password to confirm.",
   "checkUpdates": "Check for updates",
   "appVersion": "Version {version}",
   "@appVersion": {
@@ -119,7 +119,7 @@
       }
     }
   },
-  "deleteWarrantyBody": "The warranty and its reminders will be deleted. The receipt photo is removed from the image service within about a month.",
+  "deleteWarrantyBody": "The warranty, its reminders and the receipt photo will be deleted.",
   "receipt": "Receipt",
   "addReceipt": "Add a photo of the receipt",
   "receiptHint": "So you have it when you claim the warranty.",

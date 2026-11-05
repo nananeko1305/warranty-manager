@@ -174,6 +174,12 @@ test('a log never carries what the warranty is', async () => {
   assert.equal(errors.some((e) => e.includes('Tajni')), false);
 });
 
-test('the worker answers nothing over HTTP', () => {
-  assert.equal(worker.fetch().status, 404);
+test('the worker answers nothing at any other address', async () => {
+  const response = await worker.fetch(new Request('https://w/announce'), {});
+  assert.equal(response.status, 404);
+});
+
+test('the route takes only POST', async () => {
+  const response = await worker.fetch(new Request('https://w/release-receipt'), {});
+  assert.equal(response.status, 405);
 });

@@ -210,9 +210,10 @@ test('the waiting period is measured from the upload', () => {
   );
 });
 
-test('the trigger in wrangler.toml is the one the worker dispatches on', () => {
+// Asked for explicitly: photos go when someone deletes a warranty, not by themselves.
+test('nothing runs the sweep for now', () => {
   const toml = readFileSync(new URL('../wrangler.toml', import.meta.url), 'utf8');
-  assert.ok(toml.includes(`"${SWEEP_CRON}"`));
+  assert.equal(toml.includes(`"${SWEEP_CRON}"`), false);
 });
 
 test('the switch ships off', () => {
