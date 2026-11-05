@@ -346,4 +346,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notNow => 'Not now';
+
+  @override
+  String get moreDetails => 'Store, price and note';
 }

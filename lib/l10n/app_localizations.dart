@@ -721,6 +721,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not now'**
   String get notNow;
+
+  /// No description provided for @moreDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Store, price and note'**
+  String get moreDetails;
 }
 
 class _AppLocalizationsDelegate

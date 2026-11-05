@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// The languages of the app. Serbian names its script, because plain `sr` means
+/// Cyrillic to the date formats and the date picker, which would put Cyrillic
+/// months in a Latin interface.
+const List<Locale> kSupportedLocales = [
+  Locale('en'),
+  Locale.fromSubtags(languageCode: 'sr', scriptCode: 'Latn'),
+];
+
 /// Holds the selected language and persists it on the device.
 /// null = follow the phone language; otherwise picked manually (en or sr).
 class LocaleController extends ChangeNotifier {

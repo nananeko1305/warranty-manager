@@ -67,4 +67,13 @@ void main() {
       expect(find.text(label), findsOneWidget, reason: label);
     }
   });
+
+  // Regression: plain `sr` means Cyrillic to the date formats, which put
+  // "15. јун 2026." in the middle of a Latin interface.
+  testWidgets('dates in Serbian are in Latin script', (tester) async {
+    await _pump(tester, DateTime(2025, 6, 15), locale: 'sr');
+    expect(find.text('Garancija do 15. jun 2026.'), findsOneWidget);
+    await _pump(tester, DateTime(2026, 6, 16), locale: 'sr');
+    expect(find.text('Garancija istekla 15. jun 2026.'), findsOneWidget);
+  });
 }

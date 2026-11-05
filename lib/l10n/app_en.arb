@@ -162,5 +162,6 @@
   "hibernationTitle": "Keep reminders coming",
   "hibernationBody": "Android puts apps you don't open for months to sleep, and reminders stop reaching them. Turn that off for this app.",
   "openSettings": "Open settings",
-  "notNow": "Not now"
+  "notNow": "Not now",
+  "moreDetails": "Store, price and note"
 }

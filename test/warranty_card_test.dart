@@ -45,4 +45,24 @@ void main() {
     await _pump(tester, _w(notify: false));
     expect(find.byIcon(Icons.notifications_off_rounded), findsOneWidget);
   });
+
+  // The locale is sr-Latn, which goes through the number and date formats too.
+  // Neither may throw on it: that would break the app on every Serbian phone.
+  testWidgets('a Serbian phone gets Latin dates and local numbers', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      app(
+        WarrantyCard(
+          warranty: _w(store: 'Tehnomanija'),
+          now: DateTime(2026, 6, 15),
+          onTap: () {},
+        ),
+        locale: 'sr',
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('10. jan 2026.'), findsOneWidget);
+    expect(find.textContaining('1.500,00 RSD'), findsOneWidget);
+  });
 }

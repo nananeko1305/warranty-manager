@@ -38,7 +38,7 @@ class WarrantyManagerApp extends StatelessWidget {
           themeMode: themeController.mode,
           locale: localeController.locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
+          supportedLocales: kSupportedLocales,
           // Screens without an AppBar (login) get the right status-bar icon
           // color from here. The mode may follow the phone, so it is read
           // from the theme in force rather than from the controller.

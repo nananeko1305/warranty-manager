@@ -103,5 +103,6 @@
   "hibernationTitle": "Neka podsetnici stižu",
   "hibernationBody": "Android uspava aplikacije koje mesecima ne otvaraš i tada podsetnici ne stižu. Isključi to za ovu aplikaciju.",
   "openSettings": "Otvori podešavanja",
-  "notNow": "Ne sada"
+  "notNow": "Ne sada",
+  "moreDetails": "Prodavnica, cena i napomena"
 }

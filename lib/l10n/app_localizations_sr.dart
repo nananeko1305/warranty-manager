@@ -349,4 +349,7 @@ class AppLocalizationsSr extends AppLocalizations {
 
   @override
   String get notNow => 'Ne sada';
+
+  @override
+  String get moreDetails => 'Prodavnica, cena i napomena';
 }
