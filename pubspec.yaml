@@ -1,0 +1,48 @@
+name: warranty_manager
+description: "Keep warranties with a photo of the receipt, and get reminded before they end."
+publish_to: 'none'
+
+# A floor for the release version: CI works the number out from the commit
+# messages since the last tag, and never goes below this.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cloud_firestore: ^6.10.0
+  firebase_auth: ^6.7.0
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
+  http: ^1.6.0
+  image_picker: ^1.2.3
+  intl: ^0.20.3
+  package_info_plus: ^10.2.1
+  path_provider: ^2.1.6
+  share_plus: ^13.3.0
+  shared_preferences: ^2.5.5
+  url_launcher: ^6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.14.4
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/icon/logo.png
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/logo_full.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "assets/icon/logo_background.png"
+  adaptive_icon_foreground: "assets/icon/logo_foreground.png"
