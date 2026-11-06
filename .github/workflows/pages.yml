@@ -1,0 +1,59 @@
+name: Deploy download page
+
+# Redeploys the download page when only the page changed (release-apk.yml
+# ignores these paths), so a new look does not cost a release and a push
+# notification. The page is built for the newest release, and the live
+# version.json is carried over untouched: it belongs to that release.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/pages/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  APK_NAME: warranty-manager.apk
+
+jobs:
+  deploy:
+    name: Deploy download page
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Build static site for the newest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName -q .tagName)
+          PUBLISHED=$(gh release view --repo "$GITHUB_REPOSITORY" --json publishedAt -q .publishedAt)
+          pip install --quiet qrcode
+          VERSION="${TAG#v}" \
+          DATE="$(date -u -d "$PUBLISHED" +%Y-%m-%d)" \
+          DOWNLOAD_URL="https://github.com/$GITHUB_REPOSITORY/releases/latest/download/$APK_NAME" \
+            bash .github/pages/build.sh
+          curl -fsS "${{ steps.pages.outputs.base_url }}/version.json" -o _site/version.json
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

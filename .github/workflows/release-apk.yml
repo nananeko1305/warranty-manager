@@ -3,9 +3,15 @@ name: Build & Release APK
 on:
   push:
     branches: [main]
+    # A change to the download page alone is not a release: pages.yml
+    # redeploys the page for the current APK instead.
+    paths-ignore:
+      - '.github/pages/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
-# Needed to publish a Release (contents) and the update manifest (pages).
+# Needed to publish a Release (contents) and the download page + update
+# manifest (pages).
 permissions:
   contents: write
   pages: write
@@ -195,24 +201,34 @@ jobs:
             Download `${{ env.APK_NAME }}` below and install it on Android (allow
             installation from unknown sources).
 
-  # Installed apps learn about a new release from version.json on GitHub
-  # Pages (UpdateChecker in lib/services). There is no download page any
-  # more, only this file; dropping the job would leave every install
-  # reading a stale version forever.
+  # Every release redeploys GitHub Pages:
+  # - the download page (button, Share, QR for the newest APK) from
+  #   .github/pages;
+  # - version.json, which installed apps read to find updates
+  #   (UpdateChecker in lib/services). Dropping it would leave every install
+  #   reading a stale version forever.
   deploy-pages:
-    name: Publish version.json
+    name: Deploy download page
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Write version.json
+      - uses: actions/checkout@v4
+
+      # The QR is an SVG from the pure-Python qrcode package: no apt-get,
+      # no image libraries.
+      - name: Build static site
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
         run: |
           DL="https://github.com/${{ github.repository }}/releases/latest/download/${{ env.APK_NAME }}"
-          mkdir -p _site
+          pip install --quiet qrcode
+          DOWNLOAD_URL="$DL" DATE="$(date -u +%Y-%m-%d)" \
+            bash .github/pages/build.sh
           cat > _site/version.json <<EOF
-          {"version":"${{ needs.build.outputs.version }}","build":${{ github.run_number }},"url":"$DL"}
+          {"version":"$VERSION","build":${{ github.run_number }},"url":"$DL"}
           EOF
 
       - uses: actions/configure-pages@v5
