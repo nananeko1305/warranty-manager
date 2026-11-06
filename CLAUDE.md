@@ -31,7 +31,7 @@ go stale. The repository is **public**, so nothing secret goes here.
                      └─ Cloudinary         deletes a photo when the app asks
 
  GitHub Actions ─────┬─ GitHub Release     the APK
- (push to main)      ├─ GitHub Pages       version.json
+ (push to main)      ├─ GitHub Pages       version.json, download page
                      └─ FCM topic          `releases`, every install
 ```
 
@@ -140,8 +140,10 @@ arrays, and anything else comes back as null.
   keep that key. Email/Password sign-in is switched on from the same file
   (`firebase deploy --only auth`).
 - Work goes on `dev`; merging into `main` ships.
-- **Every merge into `main` reaches every phone.** The workflow has no path filter,
-  so even a docs-only merge builds an APK and notifies everyone.
+- **Every merge into `main` reaches every phone.** Even a docs-only merge builds an
+  APK and notifies everyone. The one exception is a merge that touches only the
+  download page (`.github/pages/`, `pages.yml`): `pages.yml` redeploys the page for
+  the current APK and keeps the live `version.json`, with no release and no push.
 - **The commit type sets the version:** `feat` bumps the minor, anything else the
   patch, a breaking change the major. Use Conventional Commits with a scope.
 - **This project has its own accounts.** Firebase: `firebase login:use` is set per
